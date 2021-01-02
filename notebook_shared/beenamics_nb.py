@@ -254,21 +254,119 @@ def BEESadult(t):
 
 #--------------------------------------------------------------#
 
-# ( !!!!!!!! A COMPLETER !!!!!!!!!!!) Donne la température pour le jour t 
+# Etant donné un jour de l'année (entre 1 et 365) renvoie son mois associé
+def mois(t):
+  if (isinstance(t,int)) :
+
+    if (t>= 1 and t<=31 ):
+      # Janvier
+      return 1
+    
+    #Dans le modèle on considère une année commune et non bissextile. Février -> 28 jours
+    if (t>= 32 and t<=59 ):
+      #Février
+      return 2
+
+    if (t>= 60 and t<=90 ):
+      # Mars
+      return 3  
+
+    if (t>= 91 and t<=120 ):
+      # Avril
+      return 4 
+
+    if (t>= 121 and t<=151):
+      # Mai
+      return 5
+    
+    if (t>= 152 and t<=181):
+      # Juin
+      return 6
+
+    if (t>= 182 and t<=212):
+      # Juillet
+      return 7  
+    
+    if (t>= 213 and t<=243):
+      # Août
+      return 8    
+    
+    if (t>= 244 and t<=273):
+      # Septembre
+      return 9
+    
+    if (t>= 274 and t<=304):
+      # Octobre
+      return 10
+
+    if (t>= 305 and t<=334):
+      # Novembre
+      return 11
+        
+    if (t>= 335 and t<=365):
+      # Décembre
+      return 12
+  
+  else :
+    # t n'est pas entier ou n'appartient pas à [|1;365|]
+    return -1
+
+#--------------------------------------------------------------#  
+
+# Donne la température pour le jour t 
 def TEMP(t):
-  return 1
+  # On utilise la temperature moyenne de Pau (Béarn) en 2020 par mois (de Janvier à Décembre)
+  # Source : https://www.historique-meteo.net/france/aquitaine/pau-bearn/2020/
+  temp_moy=[11,14,13,18,20,21,25,27,25,16,16,8]
+  return temp_moy[mois(t)-1]
 
 #--------------------------------------------------------------#  
 
-# ( !!!!!!!! A COMPLETER !!!!!!!!!!!) Donne la durée (en heures) pedant laquelle il pleut lorsqu'il fait jour 
+# Donne la durée (en heures) pedant laquelle il pleut lorsqu'il fait jour 
 def HOURSraining_during_daylight(t):
-  return 1
+  mois_courant = mois(t)
+  # Janvier Avril, Mai et Novembre sont les mois les plus pluvieux
+  if (mois_courant ==1 or mois_courant ==4 or mois_courant ==5 or mois_courant ==11):
+    hoursdaylight=HOURSdaylight(t)
+    rdm = rd.randint(1,3)
+    if (rdm == 1):
+      return (hoursdaylight /4)
 
+    elif (rdm == 2) :
+      return  (hoursdaylight / 2)
+
+    else :
+      return (hoursdaylight)  
+        
+  # On considère que pour les autres mois la pluie n'affecte pas le butinage
+  else :
+    return 0 
+
+  # Source pluies : https://www.ou-et-quand.net/partir/quand/france/aquitaine/pau-bearn/#:~:text=En%20moyenne%2C%20les%20mois%20les,Janvier%2C%20Avril%2C%20Mai%20et%20Novembre
+ 
 #--------------------------------------------------------------#  
 
-# ( !!!!!!!! A COMPLETER !!!!!!!!!!!) Donne la durée (en heures) pedant laquelle il pleut lorsqu'il fait jour
+# Donne la durée (en heures) pedant laquelle il pleut lorsqu'il fait jour
 def HOURSdaylight(t):
-  return 1
+  mois_courant = mois(t)
+  
+  # Source : http://calendriersolaire.com/fr/pau
+  lumierejour = [9,11,13,16]
+  if (mois_courant == 1 or mois_courant == 2 or mois_courant ==12):
+    return lumierejour[0]
+  
+  if (mois_courant==3 or mois_courant==4 or mois_courant==10 or mois_courant==11):
+    return lumierejour[1]
+  
+  if (mois_courant == 5 or mois_courant ==9):
+    return lumierejour[2]
+
+  if (mois_courant >= 6 and mois_courant <=8):
+    return lumierejour[3]
+
+  #Erreur de mois, t'es n'appartient pas à [|1;365|]
+  return(-1)
+
 
 #--------------------------------------------------------------#
 
@@ -284,24 +382,25 @@ def RAIN(t):
 def INDEXrain(t):
   return 1-RAIN(t)
 
-#--------------------------------------------------------------#  
+#--------------------------------------------------------------#  Facteur saison
 
 # Proche de 1 -> la température était favorable au butinage au jour t. 
 # Proche de 0 -> la température a empêché les abeilles d'aller butiner pendant la quasi totalité de la journée.
 def INDEXtemperature(t):
-  if (TEMP(t) <= 14):
+  temp = TEMP(t)
+  if (temp <= 14):
     return 0
   
-  if (TEMP(t) > 14 and TEMP(t) <= 22):
-    return (TEMP(t)-14)/8
+  if (temp > 14 and temp <= 22):
+    return (temp-14)/8
 
-  if (TEMP(t) > 22 and TEMP(t) <= 32):
+  if (temp > 22 and temp <= 32):
     return 1
   
-  if (TEMP(t) > 32 and TEMP(t) <= 40):
-    return (40-TEMP(t))/8  
+  if (temp > 32 and temp <= 40):
+    return (40-temp)/8  
   
-  if (TEMP(t) > 40):
+  if (temp > 40):
     return 0
 
 #--------------------------------------------------------------# 
@@ -309,17 +408,17 @@ def INDEXtemperature(t):
 # Proche de 1 -> Les conditions climatiques étaient favorables au butinage. 
 # Proche de 0 -> Les conditions climatiques ont empêché les abeilles d'aller butiner pendant la quasi totalité de la journée.
 def INDEXflight(t):
-  return INDEXrain(t) * INDEXtemperature
+  return INDEXrain(t) * INDEXtemperature(t)
 
 #--------------------------------------------------------------# 
 
 def INDEXnectaroutside(t):
-  return min ((1-season(t))*1.5,1)
+  return min((1-season(t))*1.5,1)
 
 #--------------------------------------------------------------# 
 
 def INDEXpollenoutside(t):
-  return min ((1-season(t))*1.5,1)
+  return min((1-season(t))*1.5,1)
 
 #--------------------------------------------------------------#
 
@@ -623,8 +722,8 @@ print("testez les fonctions ici")
 
 """### **PLOTS**"""
 
-# Facteur saison
-X=[i for i in range(0,365)] 
+# Facteur saison (2.1)
+X=[i for i in range(1,366)] 
 Y=[season(i) for i in X]
 
 plt.title('Facteur saison en fonction du temps')
@@ -633,3 +732,24 @@ plt.xlabel('t (en jours)')
 
 plt.plot(X,Y)
 plt.show()
+
+# Facteurs climatiques  (2.4)
+X=[i for i in range(1,366)] 
+Y=[INDEXrain(i) for i in X] #Bleu
+Y2=[INDEXflight(i) for i in X] #Orange
+
+plt.title('INDEXflight (orange) et INDEXrain (bleu) en fonction du temps')
+plt.ylabel('INDEXflight(t) || INDEXrain(t)')
+plt.xlabel('t (en jours)')
+
+
+plt.plot(X,Y)
+plt.plot(X,Y2)
+plt.plot
+
+plt.show()
+
+### INTERPRETATION
+# On rappelle que les valeurs proches de 1 indiquent que les conditions (temperature, pluie) sont favorables au butinage et celles proches de 0 sont défavorables.
+# Pendant l'hiver, les faibles temperatures empêchent les abeilles d'aller butiner. C'est tout le contraire en été, où les conditions climatiques sont excellentes.
+# De plus le facteur aléatoire lié à la pluie a un impact néfaste durant la période pluvieuse ce qui se traduit relativement bien sur ce modèle très simpliste.
