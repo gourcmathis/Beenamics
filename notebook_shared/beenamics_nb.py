@@ -28,7 +28,7 @@ x4=155 #jour de l'année où la reine pond le plus
 x5=30
 ELRbase=1600 # taux de ponte moyen de la reine (dépend de la reine, son âge etc ..)
 SUPtreshold=0.2 # si le taux de cellules vides est inférieur à cette limite alors il y a une diminution du taux de ponte (la reine a de plus en plus de mal à trouver des cellules disponibles)
-ELRstochrange=1000 # facteur stochastique du taux de ponte de la reine
+ELRstochrange=0 # facteur stochastique du taux de ponte de la reine
 
 # Cellules
 CELLShive=250000 # nb de cellules dans la ruche
@@ -40,7 +40,7 @@ LIFESPANpupae =12 #durée max (en jours) de l'état pupe
 MORTALITYeggs=0.03 # Mortalités (Plus le stade est avancé et moins le taux de mortalité est élevé)
 MORTALITYlarvae=0.01
 MORTALITYpupae=0.001
-CANNIBALISMhungerbase=[0.23,0.3,0.58,0.06,0]  # Taux fixe de cannibalisme des larves en fonction de leur age (1-5 jours)
+CANNIBALISMbase=[0.23,0.3,0.58,0.06,0]  # Taux fixe de cannibalisme des larves en fonction de leur age (1-5 jours)
 
 # Abeilles adultes
 MORTALITYadultbase=0.01
@@ -57,8 +57,13 @@ FACTORminpollenforagers = 0.01
 FACTORforagingmax=0.33
 
 # Besoins
+NECTARNEEDactiveforager = 0.08 # à établir
+NECTARNEEDnurse = 0.08 #à établir
+NECTARNEEDadult = 0.08 #à établir
+NECTARNEEDlarva = [0.04,0.05,0.06,0.07,0.08] # à établir
 POLLENNEEDlarva = [0.04,0.05,0.06,0.07,0.08] # à établir
 POLLENNEEDadult = 0.08 # à établir
+POLLENNEEDnurse = 0.08 # à établir
 NEEDnurses_per_larva=[1,2,3,4,5] # à déterminer, augmentation exponentielle grandissant avec la masse de la larve
 NEEDnurses_per_egg=1 # à établir, moins important que pour les larves car pas besoin d'être nourrit
 NEEDnurses_per_pupa=1 # à établir, moins important que pour les larves car pas besoin d'être nourrit
@@ -68,6 +73,7 @@ LOADpollenforager = 0.06
 LOADnectarforager=0.04
 FACTORforagingsuccess=0.8
 TURNSnectarforager= 15
+TURNSpollenforager=10
 RATIOnectar_to_honey=0.4
 ProcessorsPerCell = 2
 stochasticForagingFactor = 0.25
@@ -111,7 +117,11 @@ def season(t):
 
 # Nombre de cellules disponibles (vides)
 def CELLSempty(t) :
-  return CELLShive - CELLSbrood(t)-STORESpollen(t)-STORESnectar(t)-STOREShoney(t)
+  if (t<=0):
+    return CELLShive
+
+  else :
+    return CELLShive - CELLSbrood(t)-STORESpollen(t)-STORESnectar(t)-STOREShoney(t)
 
 #--------------------------------------------------------------#
 
@@ -143,6 +153,8 @@ def ELR(t):
 
 # Nombre d'oeuf au stade i à un instant t
 def EGGS(i,t):
+    if (t<=0) :
+      return 0
     # i désigne l'âge de l'individu immature, t le jour
     if i==1 :
       return ELR(t-1) * (1-MORTALITYeggs)
@@ -168,7 +180,7 @@ def CELLSeggs(t):
 
 # Taux de cannibalisme des larves
 def CANNIBALISMlarvae(i,t) :
-  return(CANNIBALISMbase[i] *(1-(INDEXpollensituation(t-1)*INDEXnursingquality(t-1))))
+  return(CANNIBALISMbase[i-1] *(1-(INDEXpollensituation(t-1)*INDEXnursingquality(t-1))))
 
 #--------------------------------------------------------------#  
 
@@ -180,6 +192,8 @@ def SURVIVALlarvae(i,t):
 
 # Nombre de larves au stade i à un instant t
 def LARVAE(i,t):
+  if (t<=0) :
+    return 0
   # i désigne l'âge de l'individu immature, t le jour
   if i==1 :
     return EGGS(LIFESPANegg,t-1)*SURVIVALlarvae(1,t)
@@ -205,6 +219,8 @@ def CELLSlarvae(t):
 
 # Nombre de pupes au stade i à un instant t
 def PUPAE(i,t):
+  if (t<=0) :
+    return 0
   # i désigne l'âge de l'individu immature, t le jour
   if i==1 :
     return LARVAE(LIFESPANlarvae,t-1)*(1-MORTALITYpupae)
@@ -246,7 +262,10 @@ def MORTALITYadult(t):
 
 # Nombre d'abeilles adultes à un instant t
 def BEESadult(t):
-  return (BEESadult(t-1)+PUPAE(LIFESPANpupae,t-1))*(1-MORTALITYadult(t)))
+  if (t<=0) :
+    return 0
+  else :
+    return (BEESadult(t-1)+PUPAE(LIFESPANpupae,t-1))*(1-MORTALITYadult(t))
 
 #--------------------------------------------------------------#
 
@@ -372,7 +391,10 @@ def HOURSdaylight(t):
 
 # Taux de pluie lorsqu'il fait jour
 def RAIN(t):
-  return(HOURSraining_during_daylight(t)/HOURSdaylight(t))
+  if (t <=0):
+    return 0
+  else:
+    return (HOURSraining_during_daylight(t)/HOURSdaylight(t))
 
 #--------------------------------------------------------------#
 
@@ -387,21 +409,24 @@ def INDEXrain(t):
 # Proche de 1 -> la température était favorable au butinage au jour t. 
 # Proche de 0 -> la température a empêché les abeilles d'aller butiner pendant la quasi totalité de la journée.
 def INDEXtemperature(t):
-  temp = TEMP(t)
-  if (temp <= 14):
+  if (t<= 0):
     return 0
-  
-  if (temp > 14 and temp <= 22):
-    return (temp-14)/8
+  else:
+    temp = TEMP(t)
+    if (temp <= 14):
+      return 0
+    
+    if (temp > 14 and temp <= 22):
+      return (temp-14)/8
 
-  if (temp > 22 and temp <= 32):
-    return 1
-  
-  if (temp > 32 and temp <= 40):
-    return (40-temp)/8  
-  
-  if (temp > 40):
-    return 0
+    if (temp > 22 and temp <= 32):
+      return 1
+    
+    if (temp > 32 and temp <= 40):
+      return (40-temp)/8  
+    
+    if (temp > 40):
+      return 0
 
 #--------------------------------------------------------------# 
 
@@ -443,7 +468,7 @@ def RATIOworkforce(t):
 def NEEDnurses(t):
 	total=0
 	for i in range(1,LIFESPANlarvae+1):
-		total+=LARVAE(i,t)*NEEDnurses_per_larva(i)
+		total+=LARVAE(i,t)*NEEDnurses_per_larva[i-1]
 	return total+(CELLSeggs(t)*NEEDnurses_per_egg)+(CELLSpupae(t)*NEEDnurses_per_pupa)
 
 #--------------------------------------------------------------#
@@ -476,8 +501,21 @@ def FORAGERSactive(t):
 
 #--------------------------------------------------------------#
 
+def FORAGERSnectaractive(t):
+  return FORAGERSnectar(t)*INDEXflight(t)*INDEXnectaroutside(t)
+
+#--------------------------------------------------------------#
+
+def FORAGERSnectar(t):
+  return min(BEESadult(t)*FACTORforagingmax-FORAGERSpollen(t),WORKFORCEnectar(t)-PROCESSORS(t))
+
+#--------------------------------------------------------------#
+
 def NEEDpollen(t): 
-  return NEEDpollen_larvae(t)+NEEDpollen_adult(t)
+  if (t<=0):
+    return 0
+  else:
+    return NEEDpollen_larvae(t)+NEEDpollen_adult(t)
 
 #--------------------------------------------------------------#
 
@@ -486,8 +524,8 @@ def NEEDpollen(t):
 #	t : day number
 def NEEDpollen_larvae(t):
 	res = 0
-	for i in range(1,LIFESPANlarva+1):
-		res = res + POLLENNEEDlarva(i)*LARVAE(i,t)
+	for i in range(1,LIFESPANlarvae+1):
+		res = res + POLLENNEEDlarva[i-1]*LARVAE(i,t)
 	return res
 
 #--------------------------------------------------------------#
@@ -527,7 +565,7 @@ def NEEDpollenincome(t):
 # Parameter :
 #	t : day number
 def NEEDpollenforagers(t):
-	return (NEEDpollenincome(t-1) / (LOADpollenforager*TURNpollenforager*FACTORforagingsuccess))
+	return (NEEDpollenincome(t-1) / (LOADpollenforager*TURNSpollenforager*FACTORforagingsuccess))
 
 #--------------------------------------------------------------#
 
@@ -571,7 +609,7 @@ def NEEDnectar(t):
 def NEEDnectar_larvae(t):
 	acc = 0
 	for i in range(1,LIFESPANlarvae+1):
-		acc = acc + (NECTARNEEDlarva(i)*LARVAE(i,t))
+		acc = acc + (NECTARNEEDlarva[i-1]*LARVAE(i,t))
 	return acc
 
 #--------------------------------------------------------------#
@@ -587,7 +625,7 @@ def NEEDnectar_adult(t):
 	nectar_nurses = NURSES(t)*NECTARNEEDnurse
 
 	# nectar needed for active foragers
-	nectar_foragers = FORAGESactive(t)*NECTARNEEDactiveforager
+	nectar_foragers = FORAGERSactive(t)*NECTARNEEDactiveforager
 	
 	# Returns the nectar demands of adult bees
 	return nectar_adults+nectar_nurses+nectar_foragers
@@ -605,7 +643,7 @@ def WORKFORCEnectar(t):
 	if RATIOworkforce(t)==1:
 		res = BEESadult(t)*(1-FACTORothertasks)
 		return res-NURSES(t)-FORAGERSpollen(t)
-	else
+	else :
 		return 0
 
 #--------------------------------------------------------------#
@@ -614,7 +652,7 @@ def WORKFORCEnectar(t):
 
 #--------------------------------------------------------------#
 
-def INCOMEpollent(t):
+def INCOMEpollen(t):
     return FORAGERSpollenactive(t) * LOADpollenforager * TURNSpollenforager * FACTORforagingstoch(t) * FACTORforagingsuccess
 
 #--------------------------------------------------------------#
@@ -686,28 +724,35 @@ def USAGEhoney(t):
 #--------------------------------------------------------------#
 
 def STORESpollen(t):
-    return STORESpollen(t-1)+INCOMEpollen(t)-USAGEpollen(t)
+    if (t<=0):
+      return 0
+    else:
+      return STORESpollen(t-1)+INCOMEpollen(t)-USAGEpollen(t)
 
 #--------------------------------------------------------------#
 
 def STORESnectar(t):
+  if (t<=0):
+    return 0
+  else :
     return STORESnectar(t-1)+INCOMEnectar(t)-USAGEnectar(t)-PROCESSEDnectar(t)
 
 #--------------------------------------------------------------#
 
 def STOREShoney(t):
+  if (t<=0):
+    return 0
+  else :  
     return STOREShoney(t-1)-USAGEhoney(t)+(PROCESSEDnectar(t)*ratioNectar)
 
 #--------------------------------------------------------------#
 
 #Result in kilogramme
 def WEIGHTcolony(t):
-	somme_res = 0
-	for i in range (1, LIFESPANlarvae) :
-			sum_res += w_larva(i) * LARVAE(i,t)
-	return sum_res
-
-    return 1/1000 * (w_hivebase + (w_cellsbase * CELLShive) + (w_pollen * STORESpollen(t)) + (w_nectar * STORESnectar(t)) + (w_honey * STOREShoney(t)) + (w_egg * CELLSegg(t)) + (w_pupa * CELLSpupae(t)) + somme_res + w_adult * BEESadult(t) )
+  somme_res = 0
+  for i in range (1, LIFESPANlarvae):
+    somme_res += w_larva[i-1]*LARVAE(i,t)
+  return 1/1000 * (w_hivebase + (w_cellsbase * CELLShive) + (w_pollen * STORESpollen(t)) + (w_nectar * STORESnectar(t)) + (w_honey * STOREShoney(t)) + (w_egg * CELLSegg(t)) + (w_pupa * CELLSpupae(t)) + somme_res + w_adult * BEESadult(t) )
 
 #--------------------------------------------------------------#
 
@@ -718,7 +763,7 @@ def BEESlazy(t):
 
 """### **TEST DES FONCTIONS**"""
 
-print("testez les fonctions ici")
+
 
 """### **PLOTS**"""
 
@@ -745,7 +790,7 @@ plt.xlabel('t (en jours)')
 
 plt.plot(X,Y)
 plt.plot(X,Y2)
-plt.plot
+
 
 plt.show()
 
@@ -753,3 +798,5 @@ plt.show()
 # On rappelle que les valeurs proches de 1 indiquent que les conditions (temperature, pluie) sont favorables au butinage et celles proches de 0 sont défavorables.
 # Pendant l'hiver, les faibles temperatures empêchent les abeilles d'aller butiner. C'est tout le contraire en été, où les conditions climatiques sont excellentes.
 # De plus le facteur aléatoire lié à la pluie a un impact néfaste durant la période pluvieuse ce qui se traduit relativement bien sur ce modèle très simpliste.
+
+print("test")
